@@ -34,7 +34,7 @@ case $# in
   2) # only one commit
      echo "$2" | show_files "$1" | sort -u ;;
   3) # a range of commits
-     if [[ "$2" =~ 0+ ]]
+     if [[ "$2" =~ ^0+$ ]]
      then
        # all past commits
        git rev-list --reverse "$3" | show_files "$1" | sort -u
