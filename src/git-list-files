@@ -1,0 +1,46 @@
+#!/bin/bash
+
+# Usage: $0 <filter> <commit> [<new_commit>]
+# lists files in a range of commits given filter
+
+show_files()
+{
+  # show files for commits on stdin
+  # assumes input is in chronological order
+  # the first commit is the oldest
+  # $1 is filter to use
+  read commit # handle oldest specially
+  if [[ "$(git rev-list --parents -n 1 "$commit")" == "$commit" ]]
+  then
+    # the first commit has no parents
+    # git diff-tree will fail on it
+    if [[ "$1" =~ .*A.* ]]
+    then
+      # the filter requests listing added files
+      git ls-tree --name-only -r "$commit"
+    fi
+  else
+    # list files as normal
+    git diff-tree --diff-filter="$1" --no-commit-id --name-only -r "$commit"
+  fi
+  # loop over the rest normally
+  while read commit
+  do
+    git diff-tree --diff-filter="$1" --no-commit-id --name-only -r "$commit"
+  done
+}
+
+case $# in
+  2) # only one commit
+     echo "$2" | show_files "$1" | sort -u ;;
+  3) # a range of commits
+     if [[ "$2" =~ 0+ ]]
+     then
+       # all past commits
+       git rev-list --reverse "$3" | show_files "$1" | sort -u
+     else
+       # commits from $1 (excluded) to $2
+       git rev-list --reverse "$2".."$3" | show_files "$1" | sort -u
+     fi
+     ;;
+esac

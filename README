@@ -1,0 +1,5 @@
+
+Scripts and tools for Arch Women's server. Documentation is scant. See the code for each. They should be simple enough to understand.
+
+To install, copy files somewhere and run makepkg -i.
+
