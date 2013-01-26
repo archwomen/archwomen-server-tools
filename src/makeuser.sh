@@ -17,7 +17,7 @@ GREP=/bin/grep
 USERADD=/usr/sbin/useradd
 PASSWD=/usr/bin/passwd
 
-echo -n "Enter your single use key now and press [enter]: "
+read -p "echo -n "Enter your single use key now and press [enter]: " key
 
 $GREP -i ${key} "$users"
 
