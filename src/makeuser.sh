@@ -19,7 +19,7 @@ PASSWD=/usr/bin/passwd
 
 read -p "echo -n "Enter your single use key now and press [enter]: " key
 
-$GREP -i ${key} "$users"
+$GREP ${key} "$users"
 
 if [ $? == 1 ]
 then
@@ -28,11 +28,9 @@ then
 else
 	echo "Authenticated..."
 
-echo -n "Enter your username and press [enter]: " 
+read -p "echo -n "Enter your username and press [enter]: " username
 
-read username
-
-$GREP -i ${username} /etc/passwd
+$GREP ${username} /etc/passwd
 
 if [ $? == 0]
 	echo " $username do you want to add a public key? [yes or no]: "
@@ -54,7 +52,6 @@ else
 	echo "Stand by while I create your account"
 	$USERADD $username
 	echo "Account created"
-	sleep 2
 	echo -n "Your password will now be set."
 	$PASSWD $username
 fi
