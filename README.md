@@ -11,6 +11,8 @@ To install, copy files somewhere and run makepkg -i.
 
 ### gen-git-repo ###
 
+**gen-git-repo is deprecated. Use gitolite to create a new repository.**
+
 usage: 
 
 gen-git-repo "repository name"
