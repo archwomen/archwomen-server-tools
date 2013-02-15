@@ -37,3 +37,14 @@ Lists files in a range of commits given filter. The filters are (taken from _man
 > Select only files that are Added (A), Copied (C), Deleted (D), Modified (M), Renamed (R), have their type (i.e. regular file, symlink, submodule, ...) changed (T), are Unmerged (U), are Unknown (X), or have had their pairing Broken (B). Any combination of the filter characters can be used. When * (All-or-none) is added to the combination, all paths are selected if there is any file that matches other criteria in the comparison; if there is no file that matches other criteria, nothing is selected.
 
 This script is intended to be used from within git hooks (such as the post-receive hook).
+
+### aw-data-backup ###
+
+usage:
+
+aw-data-backup
+(run daily from cron)
+
+What this does:
+
+Copies files and mysqldump output to a specific git repository, _~git/non-bare/server-generated-data.git_. It then commits and pushes to gitolite.

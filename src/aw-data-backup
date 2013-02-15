@@ -1,0 +1,62 @@
+#!/bin/bash
+
+# assume we run as root
+[[ "$(id -u)" != 0 ]] && { echo must run as root ; exit 1 ; }
+
+wrktree=/var/git/non-bare/server-generated-data.git
+
+###
+## Redmine
+###
+
+redmine_root=/srv/http/redmine.archwomen.org
+rmdbyml="$redmine_root"/config/database.yml
+
+rmwrk="$wrktree"/redmine
+! [[ -d "$rmwrk" ]] && mkdir "$rmwrk"
+
+## MySQL dump
+#  http://www.thegeekstuff.com/2008/09/backup-and-restore-mysql-database-using-mysqldump/
+
+# get user, db and pwd
+
+rmdb_user="`awk '/^production:/ {foo=1} /^ *username:/ {if (foo) { print $2 ; exit } }' < "$rmdbyml"`"
+
+rmdb_pwd="`awk '/^production:/ {foo=1} /^ *password:/ {if (foo) { print ; exit } }' < "$rmdbyml" | sed -e 's,^ *[^ ]*: \(.*\)$,\1,' -e 's,"\(.*\)",\1,'`"
+
+rmdb="`awk '/^production:/ {foo=1} /^ *database:/ {if (foo) { print $2 ; exit } }' < "$rmdbyml"`"
+
+# do the dump
+mysqldump -u "$rmdb_user" -p"$rmdb_pwd" "$rmdb" > "$rmwrk"/redmine_db.sql
+# restore with
+#  mysql -u "$rmdb_user" -p"$rmdb_pwd" "$rmdb" < "$rmwrk"/redmine_db.sql
+
+## Logs
+
+rsync -a "$redmine_root"/log "$rmwrk"
+
+## Files
+
+rsync -a "$redmine_root"/files "$rmwrk"
+
+###
+## Git
+###
+
+# these must be set
+#  - config user.name
+#  - config user.email
+#  - private key <=> public key in gitolite-admin
+#  - remote named gitolite
+
+chown -R git:git "$wrktree" # change ownership for everything
+cd "$wrktree"
+
+# add and commit
+sudo -u git git add -A
+sudo -u git git commit -q -m "automatic backup - `date -u`"
+
+# push
+sudo -u git git push -q gitolite master
+
+# fin
