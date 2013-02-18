@@ -3,7 +3,22 @@
 # assume we run as root
 [[ "$(id -u)" != 0 ]] && { echo must run as root ; exit 1 ; }
 
-wrktree=/var/git/non-bare/server-generated-data.git
+wrktree=/var/git/non-bare/server-data-backup.git
+
+
+
+###
+## System
+###
+
+syswrk="$wrktree"/system
+! [[ -d "$syswrk" ]] && mkdir "$syswrk"
+
+rsync -qa /etc /var/spool/cron "$syswrk"
+
+rsync -qa ~git/.gitolite.rc "$syswrk"/gitolite.rc
+
+
 
 ###
 ## Redmine
@@ -31,13 +46,11 @@ mysqldump -u "$rmdb_user" -p"$rmdb_pwd" "$rmdb" > "$rmwrk"/redmine_db.sql
 # restore with
 #  mysql -u "$rmdb_user" -p"$rmdb_pwd" "$rmdb" < "$rmwrk"/redmine_db.sql
 
-## Logs
+## Logs and Files
 
-rsync -a "$redmine_root"/log "$rmwrk"
+rsync -qa "$redmine_root"/{log,files} "$rmwrk"
 
-## Files
 
-rsync -a "$redmine_root"/files "$rmwrk"
 
 ###
 ## Git
@@ -54,7 +67,7 @@ cd "$wrktree"
 
 # add and commit
 sudo -u git git add -A
-sudo -u git git commit -q -m "automatic backup - `date -u`"
+sudo -u git git commit -q -m "automatic backup"
 
 # push
 sudo -u git git push -q gitolite master
