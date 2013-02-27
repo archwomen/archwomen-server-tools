@@ -48,7 +48,7 @@ mysqldump -u "$rmdb_user" -p"$rmdb_pwd" "$rmdb" > "$rmwrk"/redmine_db.sql
 
 ## Logs and Files
 
-rsync -qa "$redmine_root"/{log,files} "$rmwrk"
+rsync -qa "$redmine_root"/{log,files,Gemfile.lock} "$rmwrk"
 
 
 
