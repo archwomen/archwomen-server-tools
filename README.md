@@ -1,13 +1,14 @@
 ## Scripts and tools for Arch Women's server. ##
 
 To Do:
-Documentation
-Shell account creation script
-Double auth for root
+
+* Documentation
+* Shell account creation script
+* Double auth for root
 
 Documentation is scant. See the code for each. They should be simple enough to understand.
 
-To install, copy files somewhere and run makepkg -i.
+To install, copy files somewhere and run `makepkg -i`
 
 ### gen-git-repo ###
 
@@ -15,7 +16,7 @@ To install, copy files somewhere and run makepkg -i.
 
 usage: 
 
-gen-git-repo "repository name"
+    gen-git-repo "repository name"
 
 What this does:
 
@@ -28,7 +29,7 @@ What this does:
 
 usage:
 
-git-list-files "filter" "commit" "optional newer commit"
+    git-list-files "filter" "commit" "optional newer commit"
 
 What this does:
 
@@ -42,7 +43,7 @@ This script is intended to be used from within git hooks (such as the post-recei
 
 usage:
 
-aw-data-backup
+    aw-data-backup
 (run daily from cron)
 
 What this does:
