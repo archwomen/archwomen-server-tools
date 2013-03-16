@@ -20,10 +20,10 @@ usage:
 
 What this does:
 
-    1. Creates the directories /var/git/<name>.git and /var/git/<name>.wrk
-    2. Changes permissions to git:git and 2775
-    3. Initiates bare repository 
-    4. Creates ./hooks/post-receive and makes worktree = /var/git/<name>.wrk
+1. Creates the directories /var/git/<name>.git and /var/git/<name>.wrk
+2. Changes permissions to git:git and 2775
+3. Initiates bare repository 
+4. Creates ./hooks/post-receive and makes worktree = /var/git/<name>.wrk
 
 ### git-list-files ###
 
