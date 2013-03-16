@@ -16,7 +16,7 @@ To install, copy files somewhere and run `makepkg -i`
 
 usage: 
 
-`gen-git-repo "repository name"`
+    gen-git-repo "repository name"
 
 What this does:
 
@@ -29,7 +29,7 @@ What this does:
 
 usage:
 
-`git-list-files "filter" "commit" "optional newer commit"`
+    git-list-files "filter" "commit" "optional newer commit"
 
 What this does:
 
@@ -43,7 +43,7 @@ This script is intended to be used from within git hooks (such as the post-recei
 
 usage:
 
-`aw-data-backup`
+    aw-data-backup
 (run daily from cron)
 
 What this does:
