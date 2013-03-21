@@ -8,6 +8,7 @@ arch=('any')
 url="archwomen.org"
 license=('GPL')
 depends=('git')
+optdepends=('rsync' 'mysql-clients') # for aw-data-backup
 
 package()
 {
