@@ -18,6 +18,7 @@ rsync -qa /etc /var/spool/cron /var/log/pacman.log "$syswrk"
 
 rsync -qa ~git/.gitolite.rc "$syswrk"/gitolite.rc
 
+rsync -qa ~git/.gitolite/logs/ "$syswrk"/gitolite.logs
 
 
 ###
