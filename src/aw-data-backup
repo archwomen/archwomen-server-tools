@@ -16,9 +16,22 @@ syswrk="$wrktree"/system
 
 rsync -qa /etc /var/spool/cron /var/log/pacman.log "$syswrk"
 
-rsync -qa ~git/.gitolite.rc "$syswrk"/gitolite.rc
 
-rsync -qa ~git/.gitolite/logs/ "$syswrk"/gitolite.logs
+
+###
+## Git
+###
+
+gitwrk="$wrktree"/git
+
+! [[ -d "$gitwrk" ]] && mkdir "$gitwrk"
+
+rsync -qa ~git/.gitolite.rc "$gitwrk"/gitolite.rc
+
+rsync -qa ~git/.gitolite/logs/ "$gitwrk"/gitolite.logs
+
+rsync -qa ~git/.ssh/ "$gitwrk"/ssh
+
 
 
 ###
