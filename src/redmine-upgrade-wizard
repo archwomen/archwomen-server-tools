@@ -1,0 +1,132 @@
+#!/usr/bin/bash
+
+# Run as your own user. :D
+# Be sure GEM_HOME is set correctly.
+
+##
+# important values
+##
+
+redmine=/srv/http/redmine.archwomen.org
+
+##
+# useful functions
+##
+
+# exit status 0 if yes, 1 if no
+# first arg is if y or n is the default
+# second is the prompt
+loopyn()
+{
+  case "$1" in
+    N|n) prompt='(y/N)'
+         ychk=''
+         nchk='|^$'
+         ;;
+      *) prompt='(Y/n)'
+         ychk='|^$'
+         nchk=''
+         ;;
+  esac
+  while true
+  do
+    echo -n "$2 $prompt "
+    read c
+    egrep -iq "^y\$$ychk" <<< "$c" && return 0
+    egrep -iq "^n\$$nchk" <<< "$c" && return 1
+  done
+}
+
+##
+# action
+##
+
+[[ -z "$GEM_HOME" ]] && { echo \$GEM_HOME is not set. Cannot work without it. ; exit ; }
+
+echo On your own machine, pull and merge the latest redmine release.
+echo Example,
+echo    git pull upstream tag 2.2.3
+echo Let me know when you finished. Do not push to the server until I say to.
+loopyn y "Continue?" || { exit ; }
+
+echo Trying to stop unicorn...
+sudo systemctl stop unicorn.service
+if systemctl -q is-active unicorn.service
+then
+  echo I couldn\'t stop unicorn. Please do it manually.
+  loopyn y Unicorn\ stopped\? || { echo 'Cannot continue. Run this script again when you can stop unicorn.' ; exit ; }
+  echo Yay! Moving on...
+else
+  echo Done! Moving on...
+fi
+
+echo Making backup snapshot of redmine...
+cd "$redmine" ; cd ..
+bname=redmine_backup
+if [[ -d "$bname" ]]
+then
+  __name="$bname"
+  __num=1
+  while [[ -d "${__name}_${__num}" ]]
+  do
+    (( __num++ ))
+  done
+  bname="${__name}_${__num}"
+fi
+echo ...as "$bname"
+sudo cp -ai redmine.archwomen.org "$bname"
+echo Snapshot made.
+
+echo Checking snapshot...
+sudo diff -rq redmine.archwomen.org "$bname" || { echo Backup is not right. Something went wrong. ; exit ; }
+echo Looks good.
+
+echo Running aw-data-backup...
+sudo aw-data-backup
+echo Backups made.
+echo Please pull server-data-backup on your machine.
+loopyn y "Continue?" || { exit ; }
+
+echo 'On your machine, push redmine (which you merged before) to server.'
+loopyn y "Continue?" || { exit ; }
+
+echo "Now I'll install gems required by redmine."
+mkdir /tmp/$$
+echo "Temporary directory is /tmp/$$/."
+cd "$redmine"
+cp -ip Gemfile Gemfile.lock /tmp/$$
+echo Running bundle update...
+bundle update
+sudo cp -p Gemfile.lock "$redmine"
+cd "$redmine"
+sudo chown git:http Gemfile.lock
+loopyn y "Continue?" || { exit ; }
+# perhaps bundle install and then optionally bundle update
+
+echo The rest of the commands will follow the upgrade guide,
+echo 'http://www.redmine.org/projects/redmine/wiki/RedmineUpgrade'
+echo This is going to be fast\; no pauses for confirmation.
+while true
+do
+  loopyn y "Ready?" && break
+  echo Take your time. ':)'
+done
+cd "$redmine"
+
+echo Update database...
+sudo -u git GEM_HOME="$GEM_HOME" rake db:migrate RAILS_ENV=production
+
+#if have plugins
+#sudo -u git GEM_HOME="$GEM_HOME" rake redmine:plugins:migrate RAILS_ENV=production
+
+echo Clear cache and existing sessions...
+sudo -u git GEM_HOME="$GEM_HOME" rake tmp:cache:clear
+sudo -u git GEM_HOME="$GEM_HOME" rake tmp:sessions:clear
+
+echo Starting unicorn...
+sudo systemctl start unicorn.service
+if systemctl -q is-active unicorn.service \
+&&  echo Done! Finished! Upgrade complete. \
+||  echo I couldn\'t restart unicorn. Please do it manually. Otherwise, upgrade complete. ':)'
+
+echo Don't forget to log in as admin and check the version has changed.
