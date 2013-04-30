@@ -160,8 +160,8 @@ It will not be deleted after the script ends, in case something goes wrong.
 EOD
 mkdir /tmp/$$
 cd /tmp/$$
-msgc "cp -ip \"$redmine/{Gemfile,Gemfile.lock}\" /tmp/$$"
-cp -ip "$redmine/{Gemfile,Gemfile.lock}" /tmp/$$
+msgc "cp -ip \"$redmine\"/{Gemfile,Gemfile.lock} /tmp/$$"
+cp -ip "$redmine"/{Gemfile,Gemfile.lock} /tmp/$$
 msgc<<EOC
 bundle update
 (it is run as your user)
@@ -171,7 +171,7 @@ msgc "sudo cp -p Gemfile.lock \"$redmine\""
 sudo cp -p Gemfile.lock "$redmine"
 cd "$redmine"
 sudo chown git:http Gemfile.lock
-loopyn y "Continue?" || { exit ; }
+loopyn y "Continue?" || exitmsg
 # TODO perhaps bundle install and then optionally bundle update
 
 msgt<<EOD
