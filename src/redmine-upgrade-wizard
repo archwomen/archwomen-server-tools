@@ -137,7 +137,7 @@ msgs 'Looks good.'
 msgt<<EOD
 Backup database and other files.
 You will need to git pull the repo they are saved in.
-EOD 
+EOD
 msgc 'sudo aw-data-backup'
 sudo aw-data-backup
 msgs 'Backups made.'
