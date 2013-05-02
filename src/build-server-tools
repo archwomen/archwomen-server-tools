@@ -1,0 +1,10 @@
+#!/bin/bash
+
+chkoutdir='/var/git/worktrees/archwomen-server-tools.wrk'
+tmp=/tmp/build-server-tools/$$
+
+echo "building in $tmp"
+echo
+cp -ai "$chkoutdir" "$tmp"
+cd "$tmp"
+makepkg -si
