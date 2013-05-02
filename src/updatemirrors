@@ -6,6 +6,7 @@ country='US'
 url="https://www.archlinux.org/mirrorlist/?country=US&protocol=ftp&protocol=http&protocol=https&ip_version=4&ip_version=6&use_mirror_status=on"
 
 tmpfile=$(mktemp --suffix=-mirrorlist)
+mirrorlist=/etc/pacman.d/aw_mirrorlist
 
 # Get latest mirror list and save to tmpfile
 wget -qO- "$url" | sed 's/^#Server/Server/g' > "$tmpfile"
@@ -13,15 +14,15 @@ wget -qO- "$url" | sed 's/^#Server/Server/g' > "$tmpfile"
 # Backup and replace current mirrorlist file (if new file is non-zero)
 if [ -s "$tmpfile" ]
 then 
-	{ echo " Backing up the original mirrorlist..."
-	  	$su mv -i /etc/pacman.d/mirrorlist /etc/pacman.d/mirrorlist.orig;
+        { echo " Backing up the original mirrorlist..."
+          $su mv -i "$mirrorlist" "$mirrorlist".orig;
 	} &&
-	{ echo " Rotating the new list into place..."
-	    $su mv -i "$tmpfile" /etc/pacman.d/mirrorlist; 
-	}
+        { echo " Rotating the new list into place..."
+          $su mv -i "$tmpfile" "$mirrorlist"; 
+        }
 else
-	echo " Unable to update, could not download list."
+        echo " Unable to update, could not download list."
 fi
 
 # allow global read access (required for non-root yaourt execution)
-chmod +r /etc/pacman.d/mirrorlist
+chmod +r "$mirrorlist"
