@@ -14,7 +14,9 @@ wrktree=/var/git/non-bare/server-data-backup.git
 syswrk="$wrktree"/system
 ! [[ -d "$syswrk" ]] && mkdir "$syswrk"
 
-rsync -qa /etc /var/spool/cron /var/log/pacman.log "$syswrk"
+rsync -qa --delete /etc /var/spool/cron "$syswrk"
+
+rsync -qa /var/log/pacman.log "$syswrk"
 
 
 
@@ -28,9 +30,9 @@ gitwrk="$wrktree"/git
 
 rsync -qa ~git/.gitolite.rc "$gitwrk"/gitolite.rc
 
-rsync -qa ~git/.gitolite/logs/ "$gitwrk"/gitolite.logs
+rsync -qa --delete ~git/.gitolite/logs/ "$gitwrk"/gitolite.logs
 
-rsync -qa ~git/.ssh/ "$gitwrk"/ssh
+rsync -qa --delete ~git/.ssh/ "$gitwrk"/ssh
 
 
 
