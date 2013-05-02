@@ -1,7 +1,7 @@
 #!/bin/bash
 
 chkoutdir='/var/git/worktrees/archwomen-server-tools.wrk'
-tmp=/tmp/build-server-tools/$$
+tmp=/tmp/build-server-tools-$$
 
 echo "building in $tmp"
 echo
