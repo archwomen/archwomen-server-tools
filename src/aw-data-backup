@@ -83,6 +83,9 @@ cd "$wrktree"
 sudo -u git git add -A
 sudo -u git git commit -q -m "automatic backup"
 
+# clean up and compress
+git gc --auto --quiet
+
 # push
 sudo -u git git push -q gitolite master
 

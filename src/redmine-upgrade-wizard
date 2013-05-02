@@ -1,0 +1,208 @@
+#!/usr/bin/bash
+
+# Run as your own user. :D
+# Be sure GEM_HOME is set correctly.
+
+##
+# important values
+##
+
+redmine=/srv/http/redmine.archwomen.org
+
+##
+# useful functions
+##
+
+# exit status 0 if yes, 1 if no
+# first arg is if y or n is the default
+# second is the prompt
+loopyn()
+{
+  case "$1" in
+    N|n) yn='(y/N)'
+         ychk=''
+         nchk='|^$'
+         ;;
+      *) yn='(Y/n)'
+         ychk='|^$'
+         nchk=''
+         ;;
+  esac
+  while true
+  do
+    echo -n "[34m  *[0m $2 $yn "
+    read c
+    egrep -iq "^y\$$ychk" <<< "$c" && return 0
+    egrep -iq "^n\$$nchk" <<< "$c" && return 1
+  done
+}
+
+# echo arguments (if any)
+# then exit
+exitmsg()
+{
+  local pre="[31m **[0m"
+  if [[ "$#" -gt 0 ]]
+  then echo "$pre $@"
+  else echo "$pre Bye, try again later!"
+  fi
+  exit
+}
+
+# do not call this directly
+# backend for msgb and msgs
+# first arg is the indenting string - (embed color between {}
+# rest of args is message echo'd
+# if no other args, message taken from stdin
+gsm()
+{
+  local tc="`tr -d '{}' <<<"$1"`"
+  local ts="`sed 's,{[^}]*},,g'<<<"$1" | tr '[:print:]' ' '`"
+  shift
+  if [[ "$#" -gt 0 ]]
+  then
+    echo "$tc $@"
+  else
+    read first
+    echo "$tc $first"
+    sed "s,^.*\$,$ts &,"
+  fi
+}
+
+# functions for printing explanatory text
+# echo arguments
+# if no arguments, take from stdin
+msgt() { gsm '{[32m} **{[0m}' "$@" ; } # section text
+msgs() { gsm '{[33m}  *{[0m}' "$@" ; } # comment text
+msgc() { gsm '{[35m}  >{[0m}' "$@" ; } # commands
+msgn() { gsm '   ' "$@" ; }                # no prefix
+
+##
+# action
+##
+
+[[ -z "$GEM_HOME" ]] && exitmsg \$GEM_HOME is not set. Cannot work without it.
+
+# merge from upstream
+msgt<<EOD
+On your own machine, pull and merge the latest redmine release.
+Example,
+  git pull upstream tag 2.2.3
+Let me know when you finished. Do not push to the server until I say to.
+EOD
+loopyn y "Continue?" || exitmsg
+
+# stop redmine
+msgt 'Trying to stop redmine...'
+msgc 'sudo systemctl stop unicorn.service'
+sudo systemctl stop unicorn.service
+if systemctl -q is-active unicorn.service
+then
+  msgs "I couldn't stop unicorn. Please do it manually."
+  loopyn y 'Unicorn stopped?' || exitmsg 'Cannot continue. Run this script again when you can stop unicorn.'
+  msgs 'Yay! Moving on...'
+else
+  msgs 'Done! Moving on...'
+fi
+
+# copy redmine directory for backup
+# backup has a unique name
+msgt<<EOD
+Make backup snapshot of redmine directory.
+If all goes well, this will be fast.
+EOD
+cd "$redmine/.."
+bname=redmine_backup
+if [[ -d "$bname" ]]
+then
+  __name="$bname"
+  __num=1
+  while [[ -d "${__name}_${__num}" ]]
+  do
+    (( __num++ ))
+  done
+  bname="${__name}_${__num}"
+fi
+msgs "Backup name is ${bname}."
+sudo cp -ai redmine.archwomen.org "$bname"
+msgs 'Snapshot made.'
+
+# check backup
+msgt 'Checking snapshot...'
+msgc "diff -rq redmine.archwomen.org \"$bname\""
+sudo diff -rq redmine.archwomen.org "$bname" || exitmsg 'Backup is not right. Something went wrong.'
+msgs 'Looks good.'
+
+# run aw-data-backup and pull git repo
+msgt<<EOD
+Backup database and other files.
+You will need to git pull the repo they are saved in.
+EOD
+msgc 'sudo aw-data-backup'
+sudo aw-data-backup
+msgs 'Backups made.'
+msgs 'Please pull server-data-backup on your machine.'
+loopyn y 'Continue?' || exitmsg
+
+# git push to server
+msgt<<EOD
+On your machine, push redmine (which you merged before) to the server.
+Example,
+  git push origin master
+EOD
+loopyn y 'Continue?' || exitmsg
+
+# install gems - this is tricky
+msgt<<EOD
+Now I\'ll install gems required by redmine.
+Work is done in a temporary directory, /tmp/$$/.
+It will not be deleted after the script ends, in case something goes wrong.
+EOD
+mkdir /tmp/$$
+cd /tmp/$$
+msgc "cp -ip \"$redmine\"/{Gemfile,Gemfile.lock} /tmp/$$"
+cp -ip "$redmine"/{Gemfile,Gemfile.lock} /tmp/$$
+msgc<<EOC
+bundle update
+(it is run as your user)
+EOC
+bundle update
+msgc "sudo cp -p Gemfile.lock \"$redmine\""
+sudo cp -p Gemfile.lock "$redmine"
+cd "$redmine"
+sudo chown git:http Gemfile.lock
+loopyn y "Continue?" || exitmsg
+# TODO perhaps bundle install and then optionally bundle update
+
+msgt<<EOD
+The rest of the commands will follow the upgrade guide,
+  http://www.redmine.org/projects/redmine/wiki/RedmineUpgrade
+This is going to be fast; no pauses for confirmation.
+EOD
+while true
+do
+  loopyn y "Ready?" && break
+  msgn 'Take your time. :)'
+done
+cd "$redmine"
+
+msgs 'Update database...'
+msgc 'sudo -u git GEM_HOME="$GEM_HOME" rake db:migrate RAILS_ENV=production'
+sudo -u git GEM_HOME="$GEM_HOME" rake db:migrate RAILS_ENV=production
+
+#if have plugins
+#sudo -u git GEM_HOME="$GEM_HOME" rake redmine:plugins:migrate RAILS_ENV=production
+
+msgs 'Clear cache and existing sessions...'
+msgc 'sudo -u git GEM_HOME="$GEM_HOME" rake tmp:cache:clear'
+sudo -u git GEM_HOME="$GEM_HOME" rake tmp:cache:clear
+msgc 'sudo -u git GEM_HOME="$GEM_HOME" rake tmp:sessions:clear'
+sudo -u git GEM_HOME="$GEM_HOME" rake tmp:sessions:clear
+
+msgt 'Starting unicorn...'
+sudo systemctl start unicorn.service
+if systemctl -q is-active unicorn.service \
+&& msgs 'Done! Finished! Upgrade complete.' \
+|| msgs "I couldn't restart unicorn. Please do it manually. Otherwise, upgrade complete. :)"
+
+echo ; echo "Don't forget to log in as admin and check the version has changed."
