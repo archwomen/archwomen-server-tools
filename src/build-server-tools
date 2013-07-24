@@ -1,10 +1,19 @@
 #!/bin/bash
 
+# build and install archwomen-server-tools
+# needs perms to call sudo pacman
+# only one possible arg, 
+#  -q to dump output to a log rather than terminal
+
 chkoutdir='/var/git/worktrees/archwomen-server-tools.wrk'
-tmp=/tmp/build-server-tools-$$
+tmp="/tmp/build-server-tools-$$"
+log="$tmp/build-server-tools.log"
 
 echo "building in $tmp"
-echo
-cp -ai "$chkoutdir" "$tmp"
+[[ "$1" != '-q' ]] && echo
+cp -a "$chkoutdir" "$tmp"
 cd "$tmp"
-makepkg -si
+if [[ "$1" == '-q' ]]
+then makepkg -sim --noconfirm --noprogressbar &> "$log"
+else makepkg -si  --noconfirm --noprogressbar
+fi
