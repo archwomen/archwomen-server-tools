@@ -10,6 +10,7 @@ license=('GPL')
 depends=('git')
 makedepends=('lunamark-standalone-git')
 optdepends=('rsync' 'mysql-clients') # for aw-data-backup
+backup=('etc/housekeeping/webserver')
 
 build()
 {
@@ -25,7 +26,7 @@ build()
 
 package()
 {
-  install -d -m755 "$pkgdir"/usr/bin/ "$pkgdir"/usr/share/man/man1/
+  install -d -m755 "$pkgdir"/usr/bin/ "$pkgdir"/usr/share/man/man1/ "$pkgdir"/etc/housekeeping
 
   for s in "$srcdir"/bin/*
   do
@@ -35,5 +36,10 @@ package()
   for p in "$srcdir"/pages/*
   do
     install -m644 "$p" "$pkgdir"/usr/share/man/man1/
+  done
+
+  for h in "$srcdir"/housekeeping_profiles/*
+  do
+    install -m644 "$p" "$pkgdir"/etc/housekeeping
   done
 }

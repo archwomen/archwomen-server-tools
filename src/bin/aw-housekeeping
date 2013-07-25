@@ -1,0 +1,41 @@
+#!/bin/bash
+
+# need to be root
+[[ "$(id -u)" != 0 ]] && { echo must run as root 1>&2 ; exit 1 ; }
+
+# directory to find profiles in
+profiledir=/etc/housekeeping
+
+# Can optionally set profile name in args.
+# Otherwise profile name is hostname.
+#
+# The option -c causes this script to source /etc/profile.
+# This is useful in the case insufficient envars are set by cron.
+
+name="`hostname`"
+source_shell_profile=false
+
+# loop over parameters
+while (( $# ))
+do
+  if "$1" == '-c'
+  then source_shell_profile=true
+  else name="$1"
+  fi
+  shift
+done
+
+$source_shell_profile && [[ -e /etc/profile ]] && . /etc/profile
+
+profile="$profiledir/$name"
+
+[[ -z "$name" ]] && { echo missing profile name 1>&2 ; exit 2 ; }
+! [[ -f "$profile" ]] && { echo profile "'$name'" not a file, or does not exist 1>&2 ; exit 3 ; }
+! [[ -r "$profile" ]] && { echo unable to read profile "'$name'" 1>&2 ; exit 4 ; }
+
+# Loop over each entry in profile and execute.
+while read entry
+do eval "$entry" &>/dev/null
+done <"$profile"
+
+exit # ensure exit code is 0
