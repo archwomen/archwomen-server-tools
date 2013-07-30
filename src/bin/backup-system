@@ -1,0 +1,81 @@
+#!/bin/bash
+
+# need to run as root
+[[ "$(id -u)" != 0 ]] && { echo must run as root 1>&2 ; exit 1 ; }
+
+##
+# Arguments
+##
+
+# default repo name
+name="`hostname`"
+
+# loop over parameters
+while (( $# ))
+do
+  name="$1"
+  shift
+done
+
+##
+# Checks and Setup
+##
+
+check_rwx() { ! [[ -r "$1" ]] || ! [[ -w "$1" ]] || ! [[ -x "$1" ]] ; }
+
+wrktree="/var/git/non-bare/$name-system-backup.git"
+syswrk="$wrktree"/system
+gitwrk="$wrktree"/git
+
+cd "$wrktree"
+isbare="`git rev-parse --is-bare-repository 2>/dev/null`"
+[[ "$isbare" == true ]] && { echo "'$wrktree'" is a bare repository 1>&2 ; exit 3 ; }
+[[ -z "$isbare" ]] && { echo "'$wrktree'" is not a git repository 1>&2 ; exit 3 ; }
+
+! [[ -d "$wrktree" ]] && { echo work tree for "'$name'" not a dir or does not exist 1>&2 ; exit 2 ; }
+check_rwx "$wrktree" && { echo insufficient perms on work tree for "'$name'" 1>&2 ; exit 2 ; }
+
+! [[ -e "$syswrk" ]] && mkdir "$syswrk"
+! [[ -e "$gitwrk" ]] && mkdir "$gitwrk"
+
+! [[ -d "$syswrk" ]] && { echo "'$syswrk'" not a dir 1>&2 ; exit 2 ; }
+! [[ -d "$gitwrk" ]] && { echo "'$gitwrk'" not a dir 1>&2 ; exit 2 ; }
+
+check_rwx "$syswrk" && { echo insufficient perms on "'$syswrk'" 1>&2 ; exit 2 ; }
+check_rwx "$gitwrk" && { echo insufficient perms on "'$gitwrk'" 1>&2 ; exit 2 ; }
+
+##
+# Copy
+##
+
+# backup system stuff
+rsync -qa --delete /etc /var/spool/cron "$syswrk"
+rsync -qa /var/log/pacman.log "$syswrk"
+
+# backup git stuff
+rsync -qa ~git/.gitolite.rc "$gitwrk"/gitolite.rc
+rsync -qa --delete ~git/.gitolite/logs/ "$gitwrk"/gitolite.logs
+rsync -qa --delete ~git/.ssh/ "$gitwrk"/ssh
+
+##
+# Git Push and Cleanup
+##
+
+# these must be set
+#  - config user.name
+#  - config user.email
+#  - private key <=> public key in gitolite-admin
+#  - remote named gitolite
+
+chown -R git:git "$wrktree" # change ownership for everything
+cd "$wrktree" # just to be sure
+
+# add and commit
+sudo -u git git add -A
+sudo -u git git commit -q -m "automatic backup"
+
+# clean up and compress
+git gc --auto --quiet
+
+# push
+sudo -u git git push -q gitolite master
