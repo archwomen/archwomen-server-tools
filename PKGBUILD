@@ -17,6 +17,7 @@ build()
   # create man pages
   for ms in "$srcdir"/man/*
   do
+    ms="${ms##*/}"
     mkdir -p "$srcdir"/pages/"$ms"
     for m in "$srcdir"/man/"$ms"/*.md
     do
@@ -35,6 +36,7 @@ package()
 
   for ms in "$srcdir"/pages/*
   do
+    ms="${ms##*/}"
     find "$srcdir"/pages/"$ms"/ -type f -exec install -m644 {} "$pkgdir"/usr/share/man/man"$ms"/ \;
   done
 
