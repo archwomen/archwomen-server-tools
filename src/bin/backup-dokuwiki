@@ -25,7 +25,7 @@ check_rwx "$wrktree" && { echo insufficient perms on "'$worktree'" 1>&2 ; exit 2
 # Copy
 ##
 
-rsync -qa --delete "$doku"/{conf,data,lib/plugins} "$wrktree"
+rsync -qa --delete --exclude="$doku"/data/cache/ "$doku"/{conf,data,lib/plugins} "$wrktree"
 
 ##
 # Git Push and Cleanup
