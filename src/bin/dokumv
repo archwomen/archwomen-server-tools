@@ -6,7 +6,7 @@
 # does not handle backlinks
 # assumes pages are .txt
 
-doku=/srv/http/archwomen.org/dokuwiki/data
+doku=/srv/http/archwomen.org/dokuwiki
 binpath="$doku/bin"
 datapath="$doku/data"
 meta="$datapath/meta"
