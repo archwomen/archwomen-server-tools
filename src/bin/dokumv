@@ -1,0 +1,88 @@
+#!/bin/bash
+
+# dokumv <old> <new>
+# move or rename a page
+#
+# does not handle backlinks
+# assumes pages are .txt
+
+doku=/srv/http/archwomen.org/dokuwiki/data
+binpath="$doku/bin"
+datapath="$doku/data"
+meta="$datapath/meta"
+pages="$datapath/pages"
+attic="$datapath/attic"
+
+user=http
+group=http
+
+# if not running as $user:$group, switch with sudo
+cug="`id -un`:`id -gn`"
+if [[ "$user:$group" != $cug ]]
+then echo not $user:$group, switching
+     exec sudo -u $user -g $group $0 $@
+fi
+
+oldpage="`sed 's,/,:,g' <<<"$1"`"
+newpage="`sed 's,/,:,g' <<<"$2"`"
+oldpath="`sed 's,:,/,g' <<<"$1"`"
+newpath="`sed 's,:,/,g' <<<"$2"`"
+
+# check it's a file and not a namespace being moved
+if ! [[ -f "$pages/$oldpath" ]]
+then echo "$oldpage is not a file"
+     exit
+fi
+
+# check the following do not exit
+newexists=false
+for f in "$meta/$newpath".{meta,changes,indexed} "$page/$newpath.txt" "$attic/$newpath".*.txt.gz
+do
+  if [[ -e "$f" ]]
+  then echo "$f exists!"
+       newexists=true
+  fi
+done
+$newexists && exit
+
+echo manually change all backlinks
+echo -n "i'll wait "
+read
+
+mvecho()
+{
+  if ! [[ -f "$1" ]]
+  then echo "move: ${1#$datapath/} does not exist - skipping"
+       return
+  fi
+  mkdir -p "${2%/*}"
+  mv "$1" "$2"
+  echo "move: ${1#$datapath/} -> ${2#$datapath/}"
+}
+
+# obtain locks
+"$binpath/dwpage.php" lock "$oldpage" || exit
+"$binpath/dwpage.php" lock "$newpage" || exit
+
+# edit - calls vim to have the user confirm each change
+# because, not all text needs to be blindly replaced
+vim -i NONE -c ":%s/$oldpage/$newpage/gc" "$meta/$oldpath".meta
+vim -i NONE -c ":%s/$oldpage/$newpage/c" "$meta/$oldpath".changes
+
+# move
+for i in meta changes indexed
+do mvecho "$meta/$oldpath.$i" "$meta/$newpath.$i"
+done
+mvecho "$pages/$oldpath.txt" "$pages/$newpath.txt"
+for i in "$attic/$oldpath".*.txt.gz
+do j="`sed "s|$attic/$oldpath|$attic/$newpath|" <<<"$i"`"
+   mvecho "$i" "$j"
+done
+
+# release locks
+"$binpath/dwpage.php" unlock "$oldpage"
+"$binpath/dwpage.php" unlock "$newpage"
+
+echo done!
+echo may want to rebuild index
+echo or wait for it to be done automatically
