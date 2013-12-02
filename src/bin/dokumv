@@ -29,7 +29,7 @@ oldpath="`sed 's,:,/,g' <<<"$1"`"
 newpath="`sed 's,:,/,g' <<<"$2"`"
 
 # check it's a file and not a namespace being moved
-if ! [[ -f "$pages/$oldpath" ]]
+if ! [[ -f "$pages/$oldpath.txt" ]]
 then echo "$oldpage is not a file"
      exit
 fi
