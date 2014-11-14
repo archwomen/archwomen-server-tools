@@ -48,7 +48,7 @@ check_rwx "$gitwrk" && { echo insufficient perms on "'$gitwrk'" 1>&2 ; exit 2 ; 
 # Copy
 ##
 
-exclusions=( shadow\* gshadow\* )
+exclusions=( shadow\* gshadow\* /lighttpd/ssl/ /ssl/local/ )
 
 # backup system stuff
 rsync -qa --delete --exclude-from <( printf '%s\n' "${exclusions[@]}" ) /etc /var/spool/cron "$syswrk"
