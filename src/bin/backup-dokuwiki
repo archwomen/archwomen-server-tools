@@ -25,7 +25,12 @@ check_rwx "$wrktree" && { echo insufficient perms on "'$worktree'" 1>&2 ; exit 2
 # Copy
 ##
 
-rsync -qa --delete --exclude='/data/cache/' "$doku"/{conf,data,lib/plugins} "$wrktree"
+# https://www.dokuwiki.org/faq:backup
+rsync -qa --delete --exclude=/data/cache/ --exclude=/data/index/ --exclude=/data/locks/ --exclude=/data/tmp/ "$doku"/{conf,data,lib/plugins} "$wrktree"
+
+# DokuWiki relies on mtime, expecially for history
+# restore with something like (in bash, not zsh): while read -r timestamp filetype file ; do touch -d "@$timestamp" "$file" ; done < mtimes
+find "$wrktree" ! -name mtimes -path "$wrktree" -o -printf '%T@ %y %P\n' > "$wrktree/mtimes"
 
 ##
 # Git Push and Cleanup
